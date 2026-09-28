@@ -5,6 +5,7 @@ using System;
 
 public class PlateKitchenObject : KitchenObject
 {
+    public event EventHandler OnContentsChanged;
     public event EventHandler<OnIngredientAddedEvnetArgs> OnIngredientAdded;
     public class OnIngredientAddedEvnetArgs : EventArgs
     {
@@ -22,7 +23,7 @@ public class PlateKitchenObject : KitchenObject
 
     public bool TryAddIngredient(KitchenObjectSO kitchenObjectSO)
     {
-        if (!validKitchenObjectSOList.Contains(kitchenObjectSO))
+        if (!CanAddIngredient(kitchenObjectSO))
         {
             return false;
         }
@@ -46,4 +47,13 @@ public class PlateKitchenObject : KitchenObject
     {
         return kitchenObjectSOList;
     }
-}
+    public bool CanAddIngredient(KitchenObjectSO food)
+    {
+        return food != null && food.name != "Rice" && validKitchenObjectSOList.Contains(food)
+            && !kitchenObjectSOList.Exists(item => item.name == food.name);
+    }
+    public void RemoveIngredients(List<KitchenObjectSO> foods)
+    {
+        foreach (var food in foods) kitchenObjectSOList.Remove(food);
+        OnContentsChanged?.Invoke(this, EventArgs.Empty);
+    }}

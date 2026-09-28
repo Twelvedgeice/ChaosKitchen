@@ -15,6 +15,8 @@ NTU homework — simplified kitchen game.
 - Cook rice before combining it with cheese, sliced tomato or sliced meat.
 - Prepared ingredients can be placed on the cutting board or a plate.
 - Plates can be taken directly from the plate dispenser.
-- One new order arrives every 30 seconds after gameplay starts.
+- The first order appears on entering the level; further orders arrive every 30 seconds.
+- Each round lasts 200 seconds. Orders randomly include or exclude cheese (50% each).
+- A yellow arrow marks delivery. The main menu uses bg2; Chinese fonts include fallback glyphs.
 
 The project includes Assets, Packages and ProjectSettings. Build outputs, logs and local caches are excluded.

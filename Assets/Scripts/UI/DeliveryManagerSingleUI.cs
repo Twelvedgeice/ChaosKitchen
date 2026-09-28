@@ -19,7 +19,7 @@ public class DeliveryManagerSingleUI : MonoBehaviour
     private void Awake()
     {
         iconTamplate.gameObject.SetActive(false);
-        customerWaitingTimerMax = GameDateManager.instance.GetpatienceTimer(KitchenGameManager.Instance.levelNumber);
+        customerWaitingTimerMax = GameDateManager.Instance.GetpatienceTimer(KitchenGameManager.Instance.levelNumber);
     }
 
     public void SetRecipeSO(RecipeSO recipeSO, float customerWaitingTimer)
@@ -42,6 +42,7 @@ public class DeliveryManagerSingleUI : MonoBehaviour
 
     private void Update()
     {
+        if (KitchenGameManager.Instance == null || !KitchenGameManager.Instance.IsGamePlaying()) return;
         customerWaitingTimer += Time.deltaTime;
         progressTimerImage.fillAmount = 1 - customerWaitingTimer / customerWaitingTimerMax;
         if(progressTimerImage.fillAmount <= 0 && !isDeleted)

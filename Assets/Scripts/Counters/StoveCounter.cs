@@ -62,6 +62,12 @@ public class StoveCounter : BaseCounter, IHasProgress
 
     public override void Interact(Player player)
     {
+        if (player.HaskKitchenObject() && player.GetKitchenObject().TryGetPlate(out PlateKitchenObject heldPlate)
+            && heldPlate.GetKitchenObjectSOList().Count > 0)
+        {
+            PourPlate(heldPlate);
+            return;
+        }
         if (!HaskKitchenObject()) { StartCooking(player); return; }
         if (player.HaskKitchenObject())
         {
@@ -85,7 +91,19 @@ public class StoveCounter : BaseCounter, IHasProgress
     private void StartCooking(Player player)
     {
         if (!player.HaskKitchenObject()) return;
-        FryingRecipeSO recipe = GetFryingRecipeSOWithInput(player.GetKitchenObject().GetKitchenObjectSO());
+        var food = player.GetKitchenObject().GetKitchenObjectSO();
+        if (IsPrepared(food))
+        {
+            player.GetKitchenObject().SetKitchenObjectParent(this);
+            combinedIngredients.Clear();
+            combinedIngredients.Add(food);
+            state = State.Fried;
+            burningTimer = 0f;
+            burningRecipeSO = GetBurningRecipeSOWithInput(food);
+            SendState(); SendProgress(0f);
+            return;
+        }
+        FryingRecipeSO recipe = GetFryingRecipeSOWithInput(food);
         if (recipe == null) return;
         fryingRecipeSO = recipe;
         player.GetKitchenObject().SetKitchenObjectParent(this);
@@ -100,7 +118,7 @@ public class StoveCounter : BaseCounter, IHasProgress
     private void AddIngredient(Player player)
     {
         KitchenObjectSO potFood = GetKitchenObject().GetKitchenObjectSO();
-        if (potFood == null || potFood.name != "RiceCooked") return;
+        if (!IsPrepared(potFood)) return;
 
         if (state != State.Fried)
         {
@@ -110,10 +128,11 @@ public class StoveCounter : BaseCounter, IHasProgress
         }
 
         KitchenObjectSO ingredient = player.GetKitchenObject().GetKitchenObjectSO();
-        if (!KitchenObjectPlacementRules.CanCombineWithCookedRice(ingredient) || combinedIngredients.Contains(ingredient)) return;
+        if (!IsPrepared(ingredient) || ContainsFood(ingredient)) return;
 
         if (combinedIngredients.Count == 0) combinedIngredients.Add(potFood);
         combinedIngredients.Add(ingredient);
+        if (ingredient.name == "RiceCooked") burningRecipeSO = GetBurningRecipeSOWithInput(ingredient);
         CreateCombinedIngredientVisual(ingredient);
         player.GetKitchenObject().DestorySelf();
         burningTimer *= .5f;
@@ -123,7 +142,7 @@ public class StoveCounter : BaseCounter, IHasProgress
     private void ServeToPlate(PlateKitchenObject plate)
     {
         KitchenObjectSO potFood = GetKitchenObject().GetKitchenObjectSO();
-        if (potFood == null || potFood.name != "RiceCooked" || plate.GetKitchenObjectSOList().Count != 0) return;
+        if (!IsPrepared(potFood) || plate.GetKitchenObjectSOList().Count != 0) return;
         if (combinedIngredients.Count == 0) combinedIngredients.Add(potFood);
         foreach (KitchenObjectSO ingredient in combinedIngredients)
             if (!plate.TryAddIngredient(ingredient)) return;
@@ -181,4 +200,34 @@ public class StoveCounter : BaseCounter, IHasProgress
     private void SendState() => OnStateChanged?.Invoke(this, new OnStateChangedEventArgs { state = state });
     private void SendProgress(float progress) => OnProgressChanged?.Invoke(this, new IHasProgress.OnProgressChangedEventAarry { progressNormalized = Mathf.Clamp01(progress) });
     public bool IsFried() { return state == State.Fried; }
-}
+    private static bool IsPrepared(KitchenObjectSO food)
+    {
+        return food != null && (food.name == "RiceCooked" || KitchenObjectPlacementRules.CanCombineWithCookedRice(food));
+    }
+    private bool ContainsFood(KitchenObjectSO food)
+    {
+        if (HaskKitchenObject() && GetKitchenObject().GetKitchenObjectSO().name == food.name) return true;
+        return combinedIngredients.Exists(item => item.name == food.name);
+    }
+    private void PourPlate(PlateKitchenObject plate)
+    {
+        if (HaskKitchenObject() && !IsPrepared(GetKitchenObject().GetKitchenObjectSO())) return;
+        var incoming = new List<KitchenObjectSO>(plate.GetKitchenObjectSOList());
+        if (incoming.Count == 0 || incoming.Exists(food => !IsPrepared(food))) return;
+        var additions = incoming.FindAll(food => !ContainsFood(food));
+        if (additions.Count == 0) return;
+        if (HaskKitchenObject() && combinedIngredients.Count == 0)
+            combinedIngredients.Add(GetKitchenObject().GetKitchenObjectSO());
+        foreach (var food in additions)
+        {
+            if (!HaskKitchenObject()) KitchenObject.SwpanKitchenObject(food, this);
+            else CreateCombinedIngredientVisual(food);
+            combinedIngredients.Add(food);
+            if (food.name == "RiceCooked") burningRecipeSO = GetBurningRecipeSOWithInput(food);
+            burningTimer *= .5f;
+        }
+        plate.RemoveIngredients(additions);
+        state = State.Fried;
+        SendState();
+        SendProgress(burningRecipeSO == null ? 0f : burningTimer / burningRecipeSO.BurningTimerMax);
+    }}

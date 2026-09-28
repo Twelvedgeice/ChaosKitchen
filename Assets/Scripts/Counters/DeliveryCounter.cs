@@ -10,6 +10,7 @@ public class DeliveryCounter : BaseCounter
     {
         //if (Instance == null)
             Instance = this;
+        DeliveryMarker.Attach(transform);
     }
 
     public override void Interact(Player player)

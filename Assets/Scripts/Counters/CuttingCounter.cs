@@ -33,7 +33,7 @@ public class CuttingCounter : BaseCounter, IkitchenObjecParent, IHasProgress
             {
                 //Debug.Log(player.HaskKitchenObject());
                 //Debug.Log(HasRecipeWithInput(player.GetKitchenObject().GetKitchenObjectSO()));
-                if (HasRecipeWithInput(player.GetKitchenObject().GetKitchenObjectSO()) || KitchenObjectPlacementRules.MustBePlacedOnPlateOrInPot(player.GetKitchenObject().GetKitchenObjectSO()) || player.GetKitchenObject().GetKitchenObjectSO().name == "CheeseBlock")
+                if (player.GetKitchenObject().TryGetPlate(out _) || HasRecipeWithInput(player.GetKitchenObject().GetKitchenObjectSO()) || KitchenObjectPlacementRules.MustBePlacedOnPlateOrInPot(player.GetKitchenObject().GetKitchenObjectSO()) || player.GetKitchenObject().GetKitchenObjectSO().name == "CheeseBlock")
                 {
                     CuttingRecipeSO cuttingRecipeSO = GetCuttingRecipeSOWithInput(player.GetKitchenObject().GetKitchenObjectSO());
                     player.GetKitchenObject().SetKitchenObjectParent(this);

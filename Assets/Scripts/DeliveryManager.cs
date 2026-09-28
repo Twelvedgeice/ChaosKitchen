@@ -38,6 +38,10 @@ public class DeliveryManager : MonoBehaviour
         Instance = this;
         waitingRecipeSOList = new List<RecipeSO>();
         DeliveryManagerSingleUI.SetIsDeleted();
+        if (recipeListSO != null && recipeListSO.recipeSOList.Count > 0)
+        {
+            waitingRecipeSOList.Add(recipeListSO.recipeSOList[UnityEngine.Random.Range(0, recipeListSO.recipeSOList.Count)]);
+        }
     }
 
     //更新菜谱
